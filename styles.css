@@ -312,15 +312,6 @@
   color: var(--background-color);
 }
 
-/* .popular .carousel-item {
-  width: 25%;
-  margin-right: -25%;
-}
-
-.popular .active.carousel-item-left {
-  transform: translateX(25%);
-} */
-
 .section .card {
   border: 0;
   width: 16rem;

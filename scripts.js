@@ -1,3 +1,37 @@
+/*
+    Returns an array of star images,
+    meant to illustrate the rating score.
+
+    The images are found in 'images/star_on.png'
+    and 'images/star_off.png'.
+*/
+function HTMLStars(rating) {
+    const result = [];
+
+    for (let star = 1; star <= 5; star++) {
+
+        const starOn = star <= rating;
+        /* each star is lit up if its index (starting at 1)
+        is less or equal to the rating
+        */
+
+        let starImgPath = 'images/star_on.png';
+        let starImgAlt = 'star on';
+
+        if (!starOn) {
+            starImgPath = 'images/star_off.png';
+            starImgAlt = 'star off';
+        }
+
+        result.push(
+            $(`<img src="${starImgPath}" alt="${starImgAlt}" width="15px">`)
+        );
+    }
+
+    return result;
+}
+
+
 $(document).ready(
     function () {
         const quotesCarousel = $('#carouselExampleControls .carousel-inner');
@@ -10,6 +44,8 @@ $(document).ready(
         videosCarousel.append(
             $('<div class="loader">')
         );
+
+        videosCarousel.addClass('justify-content-center justify-content-md-end justify-content-lg-center');
 
         /* load quotes */
         $.ajax(
@@ -70,35 +106,29 @@ $(document).ready(
                 success: function (videosData, textStatus, jqXHR) {
                     $('#carouselExampleControls2 .loader').remove();
 
-                    for (const videoData of videosData) {
+                    for (const videoCardData of videosData) {
 
-                        let videoRatingStars = [];
+                        const videoRatingStars = HTMLStars(videoCardData.star);
 
-                        for (let starCount = 1; starCount <= 5; starCount++) {
-                            videoRatingStars.push(
-                                $(`<img src="${starCount <= videoData.star ? 'images/star_on.png' : 'images/star_off.png'}" alt="star on" width="15px"/>`)
-                            )
-                        }
-
-                        const videoCarouselItem = $('<div class="carousel-item">').append(
-                            $('<div class="col-12 col-sm-6 col-md-6 col-lg-3 d-flex justify-content-center justify-content-md-end justify-content-lg-center">').append(
+                        const videoCarouselItem = $('<div class="carousel-item col-12 col-sm-6 col-md-6 col-lg-3 d-flex">').append(
+                            $('<div>').append(
                                 $('<div class="card">').append(
-                                    $(`<img src="${videoData.thumb_url}" class="card-img-top" alt="Video thumbnail"/>`),
+                                    $(`<img src="${videoCardData.thumb_url}" class="card-img-top" alt="Video thumbnail"/>`),
                                     $('<div class="card-img-overlay text-center">').append(
                                         $('<img src="images/play.png" alt="Play" width="64px" class="align-self-center play-overlay"/>')
                                     ),
                                     $('<div class="card-body">').append(
                                         $('<h5 class="card-title font-weight-bold">').text(
-                                            videoData.title
+                                            videoCardData.title
                                         ),
                                         $('<p class="card-text text-muted">').text(
-                                            videoData["sub-title"]
+                                            videoCardData["sub-title"]
                                         ),
                                         $('<div class="creator d-flex align-items-center">').append(
-                                            $(`<img src="${videoData.author_pic_url}" alt="the creator of this video, whose name is ${videoData.author}" width="30px" class="rounded-circle"/>`)
+                                            $(`<img src="${videoCardData.author_pic_url}" alt="the creator of this video, whose name is ${videoCardData.author}" width="30px" class="rounded-circle"/>`)
                                         ),
                                         $('<h6 class="pl-3 m-0 main-color">').text(
-                                            videoData.author
+                                            videoCardData.author
                                         )
                                     ),
                                     $('<div class="info pt-3 d-flex justify-content-between">').append(
@@ -106,16 +136,15 @@ $(document).ready(
                                             videoRatingStars
                                         ),
                                         $('<span class="main-color">').text(
-                                            videoData.duration
+                                            videoCardData.duration
                                         )
                                     )
                                 )
                             )
                         );
 
-                        
-                        if (videoData.id == 1) {
-                            videoData.addClass('active');
+                        if (videoCardData.id <= 4) {
+                            videoCarouselItem.addClass('active');
                         }
 
                         videosCarousel.append(videoCarouselItem);
@@ -123,5 +152,94 @@ $(document).ready(
                 }
             }
         );
+
+        /* Code for loading the courses videos */
+        const keywordsSearchbar = $('input[type=text]');
+        const topicDropdownChoiceSpan = $('#topic-dropdown span');
+        const sortByDropdownChoiceSpan = $('#sort-by-dropdown span');
+
+        const videoCountSpan = $('span.video-count');
+
+        const coursesDiv = $('section.results .row');
+
+        function loadVideoResults() {
+            /* load course videos results */
+
+            /*
+            Update GUI to indicate that the browser is waiting
+            for a response in the courses request
+            */
+            coursesDiv.append($('<div class="loader">'));
+            videoCountSpan.text('... videos');
+
+            $.ajax(
+                {
+                    url: 'https://smileschool-api.hbtn.info/courses',
+                    method: 'GET',
+                    dataType: 'json',
+                    data: {
+                        q: keywordsSearchbar.val(),
+                        topic: topicDropdownChoiceSpan.text(),
+                        sort: sortByDropdownChoiceSpan.text()
+                    },
+                    success: function (data, textStatus, jqXHR) {
+        
+                        /*
+                        update GUI to indicate that
+                        the browser is done waiting for request to finish
+                        */
+                        $('section.results .row .loader').remove();
+                        videoCountSpan.text(`${data.courses.length} videos`);
+
+                        /* append video cards to the DOM */
+                        for (const videoCardData of data.courses) {
+                            const videoCardStars = HTMLStars(videoCardData.star);
+
+                            const videoCard =
+                                $('<div class="col-12 col-sm-4 col-lg-3 d-flex justify-content-center">').append(
+                                    $('<div class="card">').append(
+                                        $(`<img src="${videoCardData.thumb_url}" class="card-img-top" alt="Video thumbnail">`),
+                                        $('<div class="card-img-overlay text-center">').append(
+                                            $('<img src="images/play.png" alt="Play" width="64px" class="align-self-center play-overlay">')
+                                        ),
+                                        $('<div class="card-body">').append(
+                                            $(`<h5 class="card-title font-weight-bold">${videoCardData.title}</h5>`),
+                                            $('<p class="card-text text-muted">').text(
+                                                'Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod.'
+                                            ),
+                                            $('<div class="creator d-flex align-items-center">').append(
+                                                $(`<img src="${videoCardData.author_pic_url}" alt="${videoCardData.author}, creator of video" width="30px" class="rounded-circle">`),
+                                                $('<h6 class="pl-3 m-0 main-color">').text(
+                                                    videoCardData.author
+                                                )
+                                            ),
+                                            $('<div class="info pt-3 d-flex justify-content-between">').append(
+                                                $('<div class="rating">').append(
+                                                    videoCardStars
+                                                ),
+                                                $('<span class="main-color">').text(
+                                                    videoCardData.duration
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ;
+
+                            coursesDiv.append(videoCard);
+                        }
+                    }
+                }
+            );
+        }
+
+        if (coursesDiv !== undefined) {
+            keywordsSearchbar.on(
+                "propertychange change keyup paste input",
+                loadVideoResults
+            );
+
+            loadVideoResults();
+        }
     }
 );
