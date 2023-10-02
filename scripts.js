@@ -159,58 +159,119 @@ $(document).ready(
         const topicDropdownChoiceSpan = $('#topic-dropdown span');
         const sortByDropdownChoiceSpan = $('#sort-by-dropdown span');
 
-        const topicDropdownMenu = $('#topic-dropdown .dropdown-menu');
-        const sortByDropdownMenu = $('#sort-by-dropdown .dropdown-menu');
-
         const videoCountSpan = $('span.video-count');
+        const coursesDiv = $('section.results .row');        
 
-        const coursesDiv = $('section.results .row');
+        /**
+         * Displays the 'topic' and 'sort-by' options, using 'data'.
+         * 'data' should be the response to a GET request to
+         * 'https://smileschool-api.hbtn.info/courses'.
+         */
+        function displayDropdownOptions (data) {
 
-        function loadDropDownOptions() {
-            $.ajax(
-                {
-                    url: 'https://smileschool-api.hbtn.info/courses',
-                    method: 'GET',
-                    success: function (data, textStatus, jqXHR) {
+            const topicDropdownMenu = $('#topic-dropdown .dropdown-menu');
 
-                        console.log(`DATA:`);
-                        console.log(data);
+            topicDropdownMenu.empty();
 
-                        for (const topicString of data.topics) {
-                            const topicOption = $('<a class="dropdown-item" href="#">').text(
-                                topicString
-                            );
+            for (const topicString of data.topics) {
 
-                            topicOption.click(
-                                function () {
-                                    topicDropdownChoiceSpan.text(topicString);
-                                }
-                            );
-
-                            topicDropdownMenu.append(topicOption);
+                topicDropdownMenu.append(
+                    $('<a class="dropdown-item" href="#">').text(
+                        topicString
+                    ).click(
+                        function () {
+                            $('#topic-dropdown span').text(topicString);
+                            requestCoursesData();
                         }
+                    )
+                );
+            }
 
-                        for (const sortByString of data.sorts) {
-                            const sortByOption = $('<a class="dropdown-item" href="#">').text(
-                                sortByString
-                            );
+            const defaultTopic = data.topic;
+            topicDropdownChoiceSpan.text(defaultTopic);
 
-                            sortByOption.click(
-                                function () {
-                                    sortByDropdownChoiceSpan.text(sortByString);
-                                }
-                            );
+            const sortByDropdownMenu = $('#sort-by-dropdown .dropdown-menu');
 
-                            sortByDropdownMenu.append(sortByOption);
+            sortByDropdownMenu.empty();
+
+            for (const sortByString of data.sorts) {
+                sortByDropdownMenu.append(
+                    $('<a class="dropdown-item" href="#">').text(
+                        sortByString
+                    ).click(
+                        function () {
+                            $('#sort-by-dropdown span').text(sortByString);
+                            requestCoursesData();
                         }
-                    }
-                }
-            )
+                    )
+                );
+            }
+
+            const defaultSortBy = data.sort;
+            sortByDropdownChoiceSpan.text(defaultSortBy);
         }
 
-        function loadVideoResults() {
+        /**
+         * Displays the course video results using 'data'.
+         * 'data' is assumed to be the response to a GET request to
+         * 'https://smileschool-api.hbtn.info/courses'.
+         */
+        function displayVideoResults (data) {
             /* load course videos results */
 
+            /*
+            update GUI to indicate that
+            the browser is done waiting for request to finish
+            */
+            $('section.results .row .loader').remove();
+
+            videoCountSpan.text(`${data.courses.length} videos`);
+
+            /* append video cards to the DOM */
+            for (const videoCardData of data.courses) {
+                const videoCardStars = HTMLStars(videoCardData.star);
+
+                const videoCard =
+                    $('<div class="col-12 col-sm-4 col-lg-3 d-flex justify-content-center">').append(
+                        $('<div class="card">').append(
+                            $(`<img src="${videoCardData.thumb_url}" class="card-img-top" alt="Video thumbnail">`),
+                            $('<div class="card-img-overlay text-center">').append(
+                                $('<img src="images/play.png" alt="Play" width="64px" class="align-self-center play-overlay">')
+                            ),
+                            $('<div class="card-body">').append(
+                                $(`<h5 class="card-title font-weight-bold">${videoCardData.title}</h5>`),
+                                $('<p class="card-text text-muted">').text(
+                                    'Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod.'
+                                ),
+                                $('<div class="creator d-flex align-items-center">').append(
+                                    $(`<img src="${videoCardData.author_pic_url}" alt="${videoCardData.author}, creator of video" width="30px" class="rounded-circle">`),
+                                    $('<h6 class="pl-3 m-0 main-color">').text(
+                                        videoCardData.author
+                                    )
+                                ),
+                                $('<div class="info pt-3 d-flex justify-content-between">').append(
+                                    $('<div class="rating">').append(
+                                        videoCardStars
+                                    ),
+                                    $('<span class="main-color">').text(
+                                        videoCardData.duration
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ;
+
+                coursesDiv.append(videoCard);
+            }
+        }
+
+        /**
+         * Sends a GET request to 'https://smileschool-api.hbtn.info/courses',
+         * and if the request succeeds, this function calls 'displayDropdownOptions'
+         * and 'displayVideoResults' with the response data.
+         */
+        function requestCoursesData () {
             /*
             Update GUI to indicate that the browser is waiting
             for a response in the courses request
@@ -224,71 +285,24 @@ $(document).ready(
                 {
                     url: 'https://smileschool-api.hbtn.info/courses',
                     method: 'GET',
-                    dataType: 'json',
                     data: {
                         q: keywordsSearchbar.val(),
                         topic: topicDropdownChoiceSpan.text(),
                         sort: sortByDropdownChoiceSpan.text()
                     },
                     success: function (data, textStatus, jqXHR) {
-
-                        /*
-                        update GUI to indicate that
-                        the browser is done waiting for request to finish
-                        */
-                        $('section.results .row .loader').remove();
-                        videoCountSpan.text(`${data.courses.length} videos`);
-
-                        /* append video cards to the DOM */
-                        for (const videoCardData of data.courses) {
-                            const videoCardStars = HTMLStars(videoCardData.star);
-
-                            const videoCard =
-                                $('<div class="col-12 col-sm-4 col-lg-3 d-flex justify-content-center">').append(
-                                    $('<div class="card">').append(
-                                        $(`<img src="${videoCardData.thumb_url}" class="card-img-top" alt="Video thumbnail">`),
-                                        $('<div class="card-img-overlay text-center">').append(
-                                            $('<img src="images/play.png" alt="Play" width="64px" class="align-self-center play-overlay">')
-                                        ),
-                                        $('<div class="card-body">').append(
-                                            $(`<h5 class="card-title font-weight-bold">${videoCardData.title}</h5>`),
-                                            $('<p class="card-text text-muted">').text(
-                                                'Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod.'
-                                            ),
-                                            $('<div class="creator d-flex align-items-center">').append(
-                                                $(`<img src="${videoCardData.author_pic_url}" alt="${videoCardData.author}, creator of video" width="30px" class="rounded-circle">`),
-                                                $('<h6 class="pl-3 m-0 main-color">').text(
-                                                    videoCardData.author
-                                                )
-                                            ),
-                                            $('<div class="info pt-3 d-flex justify-content-between">').append(
-                                                $('<div class="rating">').append(
-                                                    videoCardStars
-                                                ),
-                                                $('<span class="main-color">').text(
-                                                    videoCardData.duration
-                                                )
-                                            )
-                                        )
-                                    )
-                                )
-                            ;
-
-                            coursesDiv.append(videoCard);
-                        }
+                        displayDropdownOptions(data);
+                        displayVideoResults(data);
                     }
                 }
             );
         }
 
-        if (coursesDiv !== undefined) {
-            keywordsSearchbar.on(
-                "propertychange change keyup paste input",
-                loadVideoResults
-            );
+        keywordsSearchbar.on(
+            "propertychange change keyup paste input",
+            requestCoursesData
+        );
 
-            loadDropDownOptions();
-            loadVideoResults();
-        }
+        requestCoursesData(true);
     }
 );
