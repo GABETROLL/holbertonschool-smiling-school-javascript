@@ -155,12 +155,58 @@ $(document).ready(
 
         /* Code for loading the courses videos */
         const keywordsSearchbar = $('input[type=text]');
+
         const topicDropdownChoiceSpan = $('#topic-dropdown span');
         const sortByDropdownChoiceSpan = $('#sort-by-dropdown span');
+
+        const topicDropdownMenu = $('#topic-dropdown .dropdown-menu');
+        const sortByDropdownMenu = $('#sort-by-dropdown .dropdown-menu');
 
         const videoCountSpan = $('span.video-count');
 
         const coursesDiv = $('section.results .row');
+
+        function loadDropDownOptions() {
+            $.ajax(
+                {
+                    url: 'https://smileschool-api.hbtn.info/courses',
+                    method: 'GET',
+                    success: function (data, textStatus, jqXHR) {
+
+                        console.log(`DATA:`);
+                        console.log(data);
+
+                        for (const topicString of data.topics) {
+                            const topicOption = $('<a class="dropdown-item" href="#">').text(
+                                topicString
+                            );
+
+                            topicOption.click(
+                                function () {
+                                    topicDropdownChoiceSpan.text(topicString);
+                                }
+                            );
+
+                            topicDropdownMenu.append(topicOption);
+                        }
+
+                        for (const sortByString of data.sorts) {
+                            const sortByOption = $('<a class="dropdown-item" href="#">').text(
+                                sortByString
+                            );
+
+                            sortByOption.click(
+                                function () {
+                                    sortByDropdownChoiceSpan.text(sortByString);
+                                }
+                            );
+
+                            sortByDropdownMenu.append(sortByOption);
+                        }
+                    }
+                }
+            )
+        }
 
         function loadVideoResults() {
             /* load course videos results */
@@ -169,6 +215,8 @@ $(document).ready(
             Update GUI to indicate that the browser is waiting
             for a response in the courses request
             */
+
+            coursesDiv.empty();
             coursesDiv.append($('<div class="loader">'));
             videoCountSpan.text('... videos');
 
@@ -183,7 +231,7 @@ $(document).ready(
                         sort: sortByDropdownChoiceSpan.text()
                     },
                     success: function (data, textStatus, jqXHR) {
-        
+
                         /*
                         update GUI to indicate that
                         the browser is done waiting for request to finish
@@ -239,6 +287,7 @@ $(document).ready(
                 loadVideoResults
             );
 
+            loadDropDownOptions();
             loadVideoResults();
         }
     }
