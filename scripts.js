@@ -281,6 +281,8 @@ $(document).ready(
             coursesDiv.append($('<div class="loader">'));
             videoCountSpan.text('... videos');
 
+            console.log("REQUESTING DATA.");
+
             $.ajax(
                 {
                     url: 'https://smileschool-api.hbtn.info/courses',
