@@ -1,51 +1,50 @@
-/*
-    Returns an array of star images,
-    meant to illustrate the rating score.
-
-    The images are found in 'images/star_on.png'
-    and 'images/star_off.png'.
-*/
-function HTMLStars(rating) {
-    const result = [];
-
-    for (let star = 1; star <= 5; star++) {
-
-        const starOn = star <= rating;
-        /* each star is lit up if its index (starting at 1)
-        is less or equal to the rating
-        */
-
-        let starImgPath = 'images/star_on.png';
-        let starImgAlt = 'star on';
-
-        if (!starOn) {
-            starImgPath = 'images/star_off.png';
-            starImgAlt = 'star off';
-        }
-
-        result.push(
-            $(`<img src="${starImgPath}" alt="${starImgAlt}" width="15px">`)
-        );
-    }
-
-    return result;
-}
-
-
 $(document).ready(
     function () {
+        /*
+            Returns an array of star images,
+            meant to illustrate the rating score.
+
+            The images are found in 'images/star_on.png'
+            and 'images/star_off.png'.
+        */
+        function HTMLStars(rating) {
+            const result = [];
+
+            for (let star = 1; star <= 5; star++) {
+
+                const starOn = star <= rating;
+                /* each star is lit up if its index (starting at 1)
+                is less or equal to the rating
+                */
+
+                let starImgPath = 'images/star_on.png';
+                let starImgAlt = 'star on';
+
+                if (!starOn) {
+                    starImgPath = 'images/star_off.png';
+                    starImgAlt = 'star off';
+                }
+
+                result.push(
+                    $(`<img src="${starImgPath}" alt="${starImgAlt}" width="15px">`)
+                );
+            }
+
+            return result;
+        }
+
         const quotesCarousel = $('#carouselExampleControls .carousel-inner');
-        const videosCarousel = $('#carouselExampleControls2 .carousel-inner');
 
-        quotesCarousel.append(
-            $('<div class="loader">')
-        );
+        const popularVideosCarousel = $('#carouselExampleControls2 .carousel-inner');
+        const latestVideosCarousel = $('#carouselExampleControls3 .carousel-inner');
 
-        videosCarousel.append(
-            $('<div class="loader">')
-        );
+        quotesCarousel.append($('<div class="loader">'));
 
-        videosCarousel.addClass('justify-content-center justify-content-md-end justify-content-lg-center');
+        popularVideosCarousel.append($('<div class="loader">'));
+        popularVideosCarousel.addClass('justify-content-center justify-content-md-end justify-content-lg-center');
+
+        latestVideosCarousel.append($('<div class="loader">'));
+        latestVideosCarousel.addClass('justify-content-center justify-content-md-end justify-content-lg-center');
 
         /* load quotes */
         $.ajax(
@@ -147,7 +146,7 @@ $(document).ready(
                             videoCarouselItem.addClass('active');
                         }
 
-                        videosCarousel.append(videoCarouselItem);
+                        popularVideosCarousel.append(videoCarouselItem);
                     }
                 }
             }
@@ -166,48 +165,80 @@ $(document).ready(
          * Displays the 'topic' and 'sort-by' options, using 'data'.
          * 'data' should be the response to a GET request to
          * 'https://smileschool-api.hbtn.info/courses'.
+         *
+         * Each dropdown option, when clicked,
+         * changes the text of the dropdown,
+         * and sends another request to the above link.
          */
         function displayDropdownOptions (data) {
 
+            function formatDropdownString (dropdownString) {
+                const spaced_result = dropdownString.split('_').join(' ');
+                return spaced_result.charAt(0).toUpperCase() + spaced_result.slice(1);
+            }
+
+            // console.log("INSIDE displayDropdownOptions");
+
+            /**
+             * Display 'topic' options and selected topic 'option',
+             * as said by the API.
+             */
             const topicDropdownMenu = $('#topic-dropdown .dropdown-menu');
 
             topicDropdownMenu.empty();
 
             for (const topicString of data.topics) {
 
+                // console.log("TOPIC STRING OF data.topics: " + topicString);
+
+                const prettyTopicString = formatDropdownString(topicString);
+
                 topicDropdownMenu.append(
                     $('<a class="dropdown-item" href="#">').text(
-                        topicString
+                        prettyTopicString
                     ).click(
                         function () {
-                            $('#topic-dropdown span').text(topicString);
+                            // console.log(`INSIDE CLICK TRIGGER FOR ${prettyTopicString}`);
+                            topicDropdownChoiceSpan.text(prettyTopicString);
+                            // console.log("SPAN TEXT: " + topicDropdownChoiceSpan.text());
                             requestCoursesData();
                         }
                     )
                 );
             }
 
-            const defaultTopic = data.topic;
+            // console.log("TOPIC: " + data.topic);
+
+            const defaultTopic = formatDropdownString(data.topic);
             topicDropdownChoiceSpan.text(defaultTopic);
 
+            /**
+             * Display 'sort by' options and selected topic 'option',
+             * as said by the API.
+             */
             const sortByDropdownMenu = $('#sort-by-dropdown .dropdown-menu');
 
             sortByDropdownMenu.empty();
 
             for (const sortByString of data.sorts) {
+
+                const prettySortByString = formatDropdownString(sortByString);
+
                 sortByDropdownMenu.append(
                     $('<a class="dropdown-item" href="#">').text(
-                        sortByString
+                        prettySortByString
                     ).click(
                         function () {
-                            $('#sort-by-dropdown span').text(sortByString);
+                            sortByDropdownChoiceSpan.text(prettySortByString);
                             requestCoursesData();
                         }
                     )
                 );
             }
 
-            const defaultSortBy = data.sort;
+            // console.log("SORT: " + data.sort);
+
+            const defaultSortBy = formatDropdownString(data.sort);
             sortByDropdownChoiceSpan.text(defaultSortBy);
         }
 
@@ -225,7 +256,14 @@ $(document).ready(
             */
             $('section.results .row .loader').remove();
 
-            videoCountSpan.text(`${data.courses.length} videos`);
+            let videoCountSpanText = `${data.courses.length} video`;
+
+            // '0 videos', '1 video', '2 videos'
+            if (data.courses.length !== 1) {
+                videoCountSpanText = videoCountSpanText + 's';
+            }
+
+            videoCountSpan.text(videoCountSpanText);
 
             /* append video cards to the DOM */
             for (const videoCardData of data.courses) {
@@ -276,23 +314,38 @@ $(document).ready(
             Update GUI to indicate that the browser is waiting
             for a response in the courses request
             */
-
             coursesDiv.empty();
             coursesDiv.append($('<div class="loader">'));
             videoCountSpan.text('... videos');
 
-            console.log("REQUESTING DATA.");
+            function formatSearchString (searchString) {
+                const lowercase = searchString.toLowerCase();
+                return lowercase.split(' ').join('_');
+            }
+
+            const topic = topicDropdownChoiceSpan.text();
+            const sortBy = sortByDropdownChoiceSpan.text();
+
+            // console.log("INSIDE request_courses_data");
+            // console.log("TOPIC: " + topic);
+            // console.log("SORT_BY: " + sortBy);
+
+            const requestData = {
+                q: keywordsSearchbar.val(),
+                topic: formatSearchString(topic),
+                sort: formatSearchString(sortBy)
+            };
 
             $.ajax(
                 {
                     url: 'https://smileschool-api.hbtn.info/courses',
                     method: 'GET',
-                    data: {
-                        q: keywordsSearchbar.val(),
-                        topic: topicDropdownChoiceSpan.text(),
-                        sort: sortByDropdownChoiceSpan.text()
-                    },
+                    data: requestData,
                     success: function (data, textStatus, jqXHR) {
+                        // console.log("RESPONSE:");
+                        // console.log(data);
+
+                        keywordsSearchbar.val(data.q);
                         displayDropdownOptions(data);
                         displayVideoResults(data);
                     }
@@ -305,6 +358,6 @@ $(document).ready(
             requestCoursesData
         );
 
-        requestCoursesData(true);
+        requestCoursesData();
     }
 );
